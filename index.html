@@ -14,6 +14,7 @@
         .btn { background: linear-gradient(to right, #4a00e0, #8e2de2); color: white; border: none; padding: 15px; border-radius: 50px; font-size: 16px; cursor: pointer; width: 100%; font-weight: 600; }
         .confirmation { background: #d4edda; color: #155724; padding: 15px; border-radius: 8px; margin: 15px 0; text-align: center; display: none; }
         .instructions { color: #666; text-align: center; margin-bottom: 20px; }
+        .loading { display: none; text-align: center; color: #666; }
     </style>
 </head>
 <body>
@@ -32,6 +33,10 @@
             
             <button class="btn" onclick="sendMessage()">Send Message Anonymously</button>
             
+            <div class="loading" id="loadingMessage">
+                ⏳ Sending message...
+            </div>
+            
             <div class="confirmation" id="confirmationMessage">
                 ✅ <strong>Message Sent Successfully!</strong><br>
                 Your Sensei has received your anonymous message.
@@ -40,86 +45,95 @@
     </div>
 
     <script>
-        // Store messages in localStorage
-        let allMessages = JSON.parse(localStorage.getItem('anonymousMessages')) || [];
+        // Google Apps Script Web App URL (you'll need to create this)
+        const SCRIPT_URL = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec';
         
-        function sendMessage() {
+        async function sendMessage() {
             const messageInput = document.getElementById('messageInput');
             const message = messageInput.value.trim();
+            const sendBtn = document.querySelector('.btn');
+            const loading = document.getElementById('loadingMessage');
+            const confirmation = document.getElementById('confirmationMessage');
             
             if (!message) {
                 alert('Please enter a message');
                 return;
             }
             
-            // Capture metadata silently (students don't see this)
+            // Show loading, hide button
+            sendBtn.style.display = 'none';
+            loading.style.display = 'block';
+            confirmation.style.display = 'none';
+            
+            // Capture metadata
             const metadata = {
                 timestamp: new Date().toISOString(),
+                message: message,
                 userAgent: navigator.userAgent,
                 screenResolution: screen.width + 'x' + screen.height,
                 language: navigator.language,
                 timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
                 platform: navigator.platform,
-                cookiesEnabled: navigator.cookieEnabled,
-                onlineStatus: navigator.onLine,
                 referrer: document.referrer || 'Direct visit',
-                pageUrl: window.location.href,
-                timeOnPage: Math.floor((Date.now() - performance.timing.navigationStart) / 1000) + 's'
+                pageUrl: window.location.href
             };
             
-            // Save message with metadata
-            const messageData = {
-                id: Date.now() + Math.random(),
-                message: message,
-                metadata: metadata,
-                timestamp: new Date().toLocaleString(),
-                date: new Date().toDateString()
-            };
-            
-            allMessages.push(messageData);
-            localStorage.setItem('anonymousMessages', JSON.stringify(allMessages));
-            
-            // Show confirmation to student
-            const confirmation = document.getElementById('confirmationMessage');
-            confirmation.style.display = 'block';
-            messageInput.value = '';
-            
-            // Hide confirmation after 4 seconds
-            setTimeout(() => {
-                confirmation.style.display = 'none';
-            }, 4000);
+            try {
+                // Send to Google Sheets (or fallback to localStorage)
+                const success = await sendToGoogleSheets(metadata);
+                
+                if (success) {
+                    confirmation.style.display = 'block';
+                    messageInput.value = '';
+                } else {
+                    // Fallback to localStorage
+                    saveToLocalStorage(metadata);
+                    confirmation.style.display = 'block';
+                    messageInput.value = '';
+                }
+            } catch (error) {
+                // Fallback to localStorage
+                saveToLocalStorage(metadata);
+                confirmation.style.display = 'block';
+                messageInput.value = '';
+            } finally {
+                // Restore button
+                sendBtn.style.display = 'block';
+                loading.style.display = 'none';
+                
+                // Hide confirmation after 4 seconds
+                setTimeout(() => {
+                    confirmation.style.display = 'none';
+                }, 4000);
+            }
         }
         
-        // Add sample messages for demonstration
-        if (allMessages.length === 0) {
-            const sampleMessages = [
-                "This is a sample anonymous message",
-                "Testing the anonymous messaging system",
-                "Looking forward to learning about online privacy!"
-            ];
-            
-            sampleMessages.forEach((msg, index) => {
-                allMessages.push({
-                    id: Date.now() + index,
-                    message: msg,
-                    metadata: {
-                        timestamp: new Date().toISOString(),
-                        userAgent: navigator.userAgent,
-                        screenResolution: '1920x1080',
-                        language: 'en-US',
-                        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                        platform: navigator.platform,
-                        cookiesEnabled: true,
-                        onlineStatus: true,
-                        referrer: 'Direct visit',
-                        pageUrl: window.location.href,
-                        timeOnPage: '0s'
+        async function sendToGoogleSheets(data) {
+            // This will work once you set up the Google Apps Script
+            try {
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
                     },
-                    timestamp: new Date().toLocaleString(),
-                    date: new Date().toDateString()
+                    body: JSON.stringify(data)
                 });
+                
+                return response.ok;
+            } catch (error) {
+                console.log('Google Sheets not set up, using localStorage');
+                return false;
+            }
+        }
+        
+        function saveToLocalStorage(data) {
+            let messages = JSON.parse(localStorage.getItem('anonymousMessages')) || [];
+            messages.push({
+                id: Date.now() + Math.random(),
+                ...data,
+                timestamp: new Date().toLocaleString()
             });
-            localStorage.setItem('anonymousMessages', JSON.stringify(allMessages));
+            localStorage.setItem('anonymousMessages', JSON.stringify(messages));
         }
     </script>
 </body>
