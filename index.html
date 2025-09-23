@@ -45,8 +45,9 @@
     </div>
 
     <script>
-        // Google Apps Script Web App URL (you'll need to create this)
-        const SCRIPT_URL = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec';
+        // === REPLACE THIS WITH YOUR GOOGLE APPS SCRIPT URL ===
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbysxJIQqr0aksjYJb28cYiOnicJjbqGhkZkbn8SjaBblx4j-dOeeR8Ovh6G7IU0qhMSCw/exec';
+        const API_PASSWORD = 'Sense1i23'; // Must match the password in Google Apps Script
         
         async function sendMessage() {
             const messageInput = document.getElementById('messageInput');
@@ -79,50 +80,41 @@
             };
             
             try {
-                // Send to Google Sheets (or fallback to localStorage)
-                const success = await sendToGoogleSheets(metadata);
+                // Send to Google Sheets with password protection
+                const response = await fetch(SCRIPT_URL + '?password=' + encodeURIComponent(API_PASSWORD), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(metadata)
+                });
                 
-                if (success) {
-                    confirmation.style.display = 'block';
+                const result = await response.json();
+                
+                if (result.success) {
+                    confirmation.innerHTML = '✅ <strong>Message Sent Successfully!</strong><br>Your Sensei has received your anonymous message.';
                     messageInput.value = '';
+                } else if (result.error === 'Unauthorized') {
+                    throw new Error('Authentication failed. Using offline mode.');
                 } else {
-                    // Fallback to localStorage
-                    saveToLocalStorage(metadata);
-                    confirmation.style.display = 'block';
-                    messageInput.value = '';
+                    throw new Error(result.error);
                 }
+                
             } catch (error) {
                 // Fallback to localStorage
                 saveToLocalStorage(metadata);
-                confirmation.style.display = 'block';
+                confirmation.innerHTML = '✅ <strong>Message Saved (Offline Mode)</strong><br>Message stored locally. Sensei will see it later.';
                 messageInput.value = '';
             } finally {
-                // Restore button
+                // Restore button and show confirmation
                 sendBtn.style.display = 'block';
                 loading.style.display = 'none';
+                confirmation.style.display = 'block';
                 
                 // Hide confirmation after 4 seconds
                 setTimeout(() => {
                     confirmation.style.display = 'none';
                 }, 4000);
-            }
-        }
-        
-        async function sendToGoogleSheets(data) {
-            // This will work once you set up the Google Apps Script
-            try {
-                const response = await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(data)
-                });
-                
-                return response.ok;
-            } catch (error) {
-                console.log('Google Sheets not set up, using localStorage');
-                return false;
             }
         }
         
