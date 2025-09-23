@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher View - Anonymous Messages</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: #f5f5f5; min-height: 100vh; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow: hidden; }
+        header { background: linear-gradient(to right, #4a00e0, #8e2de2); color: white; padding: 30px; text-align: center; }
+        .content { padding: 30px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center; }
+        .message-item { background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 15px 0; }
+        .metadata-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .metadata-item { background: #f8f9fa; padding: 10px; border-radius: 5px; font-size: 14px; }
+        .tab-buttons { display: flex; margin-bottom: 20px; border-bottom: 1px solid #e0e0e0; }
+        .tab-button { padding: 10px 20px; background: none; border: none; cursor: pointer; border-bottom: 3px solid transparent; }
+        .tab-button.active { border-bottom: 3px solid #4a00e0; color: #4a00e0; font-weight: 600; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .export-btn { background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>👨‍🏫 Teacher Dashboard</h1>
+            <p>Anonymous Messages & Metadata Analysis</p>
+        </header>
+        
+        <div class="content">
+            <div class="tab-buttons">
+                <button class="tab-button active" onclick="switchTab('messages')">Messages</button>
+                <button class="tab-button" onclick="switchTab('analytics')">Analytics</button>
+                <button class="tab-button" onclick="switchTab('metadata')">Raw Metadata</button>
+            </div>
+            
+            <!-- Messages Tab -->
+            <div id="messages-tab" class="tab-content active">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2>📨 Received Messages: <span id="messageCount">0</span></h2>
+                    <button class="export-btn" onclick="exportData()">Export Data</button>
+                </div>
+                <div id="allMessages">
+                    <p>No messages received yet.</p>
+                </div>
+            </div>
+            
+            <!-- Analytics Tab -->
+            <div id="analytics-tab" class="tab-content">
+                <h2>📊 Metadata Analytics</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>📱 Devices</h3>
+                        <div id="devicesStats">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>🌐 Browsers</h3>
+                        <div id="browsersStats">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>🖥️ Resolutions</h3>
+                        <div id="resolutionStats">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>🗣️ Languages</h3>
+                        <div id="languageStats">-</div>
+                    </div>
+                </div>
+                
+                <div id="detailedAnalytics" style="margin-top: 30px;"></div>
+            </div>
+            
+            <!-- Raw Metadata Tab -->
+            <div id="metadata-tab" class="tab-content">
+                <h2>🔍 Raw Metadata</h2>
+                <div id="rawMetadata">
+                    <p>Select a message to view its raw metadata.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allMessages = JSON.parse(localStorage.getItem('anonymousMessages')) || [];
+        let selectedMessageId = null;
+        
+        function switchTab(tabName) {
+            // Update tabs
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(tabName + '-tab').classList.add('active');
+            
+            // Refresh tab content
+            if (tabName === 'analytics') displayAnalytics();
+            if (tabName === 'metadata') displayRawMetadata();
+        }
+        
+        function displayAllMessages() {
+            const container = document.getElementById('allMessages');
+            const countElement = document.getElementById('messageCount');
+            
+            countElement.textContent = allMessages.length;
+            
+            if (allMessages.length === 0) {
+                container.innerHTML = '<p>No messages received yet.</p>';
+                return;
+            }
+            
+            // Show messages in reverse order (newest first)
+            container.innerHTML = '';
+            const reversedMessages = [...allMessages].reverse();
+            
+            reversedMessages.forEach((msg, index) => {
+                const messageElement = document.createElement('div');
+                messageElement.className = 'message-item';
+                messageElement.innerHTML = `
+                    <div style="display: flex; justify-content: between; align-items: start;">
+                        <div style="flex: 1;">
+                            <strong>Message ${allMessages.length - index}:</strong> 
+                            <span style="color: #666;">(${msg.timestamp})</span>
+                            <div style="margin-top: 10px; background: #f8f9fa; padding: 10px; border-radius: 5px;">
+                                "${msg.message}"
+                            </div>
+                        </div>
+                        <button onclick="selectMessage(${msg.id})" style="background: #4a00e0; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; margin-left: 10px;">
+                            View Metadata
+                        </button>
+                    </div>
+                `;
+                container.appendChild(messageElement);
+            });
+        }
+        
+        function selectMessage(messageId) {
+            selectedMessageId = messageId;
+            switchTab('metadata');
+            displayRawMetadata();
+        }
+        
+        function displayAnalytics() {
+            if (allMessages.length === 0) return;
+            
+            // Calculate statistics
+            const platforms = [...new Set(allMessages.map(msg => msg.metadata.platform))];
+            const browsers = allMessages.map(msg => {
+                const ua = msg.metadata.userAgent.toLowerCase();
+                if (ua.includes('chrome')) return 'Chrome';
+                if (ua.includes('firefox')) return 'Firefox';
+                if (ua.includes('safari') && !ua.includes('chrome')) return 'Safari';
+                if (ua.includes('edge')) return 'Edge';
+                return 'Other';
+            });
+            const browserCounts = browsers.reduce((acc, browser) => {
+                acc[browser] = (acc[browser] || 0) + 1;
+                return acc;
+            }, {});
+            
+            const screenResolutions = [...new Set(allMessages.map(msg => msg.metadata.screenResolution))];
+            const languages = [...new Set(allMessages.map(msg => msg.metadata.language))];
+            
+            // Update stats cards
+            document.getElementById('devicesStats').innerHTML = platforms.map(p => `<div>${p}</div>`).join('');
+            document.getElementById('browsersStats').innerHTML = Object.entries(browserCounts)
+                .map(([browser, count]) => `<div>${browser}: ${count}</div>`).join('');
+            document.getElementById('resolutionStats').innerHTML = screenResolutions.map(r => `<div>${r}</div>`).join('');
+            document.getElementById('languageStats').innerHTML = languages.map(l => `<div>${l}</div>`).join('');
+            
+            // Detailed analytics
+            const analyticsContainer = document.getElementById('detailedAnalytics');
+            analyticsContainer.innerHTML = `
+                <h3>Detailed Analysis</h3>
+                <div class="metadata-grid">
+                    <div class="metadata-item">
+                        <strong>Total Unique Devices:</strong> ${platforms.length}
+                    </div>
+                    <div class="metadata-item">
+                        <strong>Most Common Browser:</strong> ${Object.entries(browserCounts).sort((a,b) => b[1]-a[1])[0][0]}
+                    </div>
+                    <div class="metadata-item">
+                        <strong>Time Zone Detection:</strong> ${allMessages[0].metadata.timezone}
+                    </div>
+                    <div class="metadata-item">
+                        <strong>Average Time on Page:</strong> ${allMessages[0].metadata.timeOnPage}
+                    </div>
+                </div>
+            `;
+        }
+        
+        function displayRawMetadata() {
+            const container = document.getElementById('rawMetadata');
+            
+            if (!selectedMessageId) {
+                container.innerHTML = '<p>Select a message from the Messages tab to view its metadata.</p>';
+                return;
+            }
+            
+            const message = allMessages.find(msg => msg.id === selectedMessageId);
+            if (!message) return;
+            
+            container.innerHTML = `
+                <h3>Metadata for Message</h3>
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 10px 0;">
+                    "${message.message}"
+                </div>
+                <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 5px; overflow-x: auto; font-size: 12px;">${JSON.stringify(message.metadata, null, 2)}</pre>
+            `;
+        }
+        
+        function exportData() {
+            const dataStr = JSON.stringify(allMessages, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'anonymous-messages-data.json';
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        // Auto-refresh every 10 seconds
+        function refreshData() {
+            const storedMessages = JSON.parse(localStorage.getItem('anonymousMessages')) || [];
+            if (storedMessages.length !== allMessages.length) {
+                allMessages = storedMessages;
+                displayAllMessages();
+                if (document.getElementById('analytics-tab').classList.contains('active')) {
+                    displayAnalytics();
+                }
+            }
+        }
+        
+        // Initialize
+        displayAllMessages();
+        displayAnalytics();
+        setInterval(refreshData, 10000);
+    </script>
+</body>
+</html>
