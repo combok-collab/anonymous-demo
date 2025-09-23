@@ -3,141 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Anonymous Messaging Demo</title>
+    <title>Send Anonymous Message to Teacher</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%); color: #333; min-height: 100vh; padding: 20px; }
-        .container { max-width: 1000px; margin: 0 auto; background-color: rgba(255, 255, 255, 0.95); border-radius: 15px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); overflow: hidden; }
+        body { background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%); min-height: 100vh; padding: 20px; display: flex; align-items: center; justify-content: center; }
+        .container { max-width: 600px; width: 100%; background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); overflow: hidden; }
         header { background: linear-gradient(to right, #4a00e0, #8e2de2); color: white; padding: 30px; text-align: center; }
-        h1 { font-size: 2.5rem; margin-bottom: 10px; }
         .content { padding: 30px; }
-        .panels { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
-        @media (max-width: 768px) { .panels { grid-template-columns: 1fr; } }
-        .panel { background: #f8f9fa; border-radius: 10px; padding: 20px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); }
-        .message-form { margin-bottom: 20px; }
-        textarea { width: 100%; height: 150px; padding: 15px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 1rem; resize: vertical; }
-        .btn { background: linear-gradient(to right, #4a00e0, #8e2de2); color: white; border: none; padding: 12px 25px; border-radius: 50px; font-size: 1rem; cursor: pointer; margin-top: 15px; }
-        .metadata-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
-        .metadata-item { background-color: white; padding: 10px 15px; border-radius: 8px; }
-        .metadata-label { font-weight: 600; color: #6c757d; font-size: 0.9rem; }
-        .metadata-value { font-size: 0.9rem; margin-top: 5px; word-break: break-word; }
-        .confirmation { background: #d4edda; color: #155724; padding: 15px; border-radius: 5px; margin: 15px 0; display: none; }
-        .teacher-section { background: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; margin-top: 30px; border-radius: 5px; display: none; }
-        .password-prompt { background: #d1ecf1; border-left: 4px solid #17a2b8; padding: 15px; margin: 15px 0; border-radius: 5px; }
+        textarea { width: 100%; height: 120px; padding: 15px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 16px; margin: 15px 0; resize: vertical; }
+        .btn { background: linear-gradient(to right, #4a00e0, #8e2de2); color: white; border: none; padding: 12px 30px; border-radius: 50px; font-size: 16px; cursor: pointer; width: 100%; }
+        .confirmation { background: #d4edda; color: #155724; padding: 15px; border-radius: 8px; margin: 15px 0; text-align: center; display: none; }
+        .teacher-access { background: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: center; }
         .hidden { display: none; }
+        .teacher-view { background: #f8f9fa; padding: 20px; border-radius: 10px; margin-top: 20px; }
+        .message-item { background: white; padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 4px solid #4a00e0; }
+        .metadata-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 15px; }
+        .metadata-item { background: white; padding: 10px; border-radius: 5px; font-size: 14px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>Anonymous Message Demo</h1>
-            <p>Send truly anonymous messages to your teacher</p>
-        </header>
+        <!-- Student View (Default) -->
+        <div id="studentView">
+            <header>
+                <h1>Send Anonymous Message</h1>
+                <p>Your message will be completely anonymous</p>
+            </header>
+            
+            <div class="content">
+                <p><strong>Instructions:</strong> Type your message below. Only your teacher will see it.</p>
+                
+                <textarea id="messageInput" placeholder="Type your anonymous message here..."></textarea>
+                
+                <button class="btn" onclick="sendMessage()">Send Message Anonymously</button>
+                
+                <div class="confirmation" id="confirmationMessage">
+                    ✅ <strong>Message Sent Successfully!</strong><br>
+                    Your teacher has received your anonymous message.
+                </div>
+                
+                <div class="teacher-access">
+                    <p><strong>Teacher Access:</strong></p>
+                    <input type="password" id="teacherPassword" placeholder="Enter teacher password" style="padding: 8px; margin: 5px; border: 1px solid #ddd; border-radius: 5px; width: 200px;">
+                    <button onclick="checkTeacherPassword()" style="padding: 8px 15px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer;">Access Teacher View</button>
+                </div>
+            </div>
+        </div>
         
-        <div class="content">
-            <!-- Student View -->
-            <div id="studentView">
-                <div class="panels">
-                    <div class="panel">
-                        <h2>Send an Anonymous Message</h2>
-                        <div class="message-form">
-                            <textarea id="messageInput" placeholder="Type your anonymous message here... Your teacher will see this but other students won't."></textarea>
-                            <button id="sendButton" class="btn">Send Anonymously</button>
-                        </div>
-                        
-                        <div class="confirmation" id="confirmationMessage">
-                            ✅ <strong>Message Sent Successfully!</strong><br>
-                            Your teacher can see your message, but other students cannot.
-                        </div>
+        <!-- Teacher View (Hidden from students) -->
+        <div id="teacherView" class="hidden">
+            <header>
+                <h1>Teacher View - Anonymous Messages</h1>
+                <p>All messages and captured metadata</p>
+            </header>
+            
+            <div class="content">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <button onclick="switchToStudentView()" class="btn" style="width: auto; background: #6c757d;">← Back to Student View</button>
+                </div>
+                
+                <div class="teacher-view">
+                    <h3>📨 Received Messages: <span id="messageCount">0</span></h3>
+                    <div id="allMessages">
+                        <p>No messages received yet.</p>
                     </div>
                     
-                    <div class="panel">
-                        <h2>What Information Could Be Captured</h2>
-                        <div class="metadata-grid" id="metadataDisplay">
-                            <!-- Metadata will be displayed here -->
+                    <div style="margin-top: 30px;">
+                        <h3>📊 Captured Metadata Analysis</h3>
+                        <div id="metadataAnalysis">
+                            <p>Metadata will appear here as messages are received.</p>
                         </div>
                     </div>
                 </div>
-                
-                <div class="password-prompt">
-                    <h3>Teacher Access</h3>
-                    <p>If you are the teacher, enter the password to view all messages:</p>
-                    <input type="password" id="teacherPassword" placeholder="Enter teacher password">
-                    <button onclick="checkTeacherPassword()" class="btn">Access Teacher View</button>
-                </div>
-            </div>
-            
-            <!-- Teacher View (Hidden from students) -->
-            <div id="teacherView" class="teacher-section hidden">
-                <h2>👨‍🏫 Teacher View - All Messages</h2>
-                <p><strong>This view is only visible to you with the password.</strong> Students only see the message submission form.</p>
-                <button onclick="switchToStudentView()" class="btn">Return to Student View</button>
-                
-                <div id="allMessages">
-                    <p>No messages received yet. Messages will appear here as students submit them.</p>
-                </div>
-                
-                <div class="metadata-grid" id="teacherMetadata">
-                    <!-- Teacher metadata view -->
-                </div>
-            </div>
-            
-            <div class="disclaimer">
-                <strong>Educational Purpose:</strong> This demonstrates how "anonymous" services work - messages go only to the teacher, but metadata can still be captured.
             </div>
         </div>
     </div>
 
     <script>
-        // Simple password protection (for demo purposes)
-        const TEACHER_PASSWORD = "teacher123"; // In real app, use proper authentication
+        // Teacher password
+        const TEACHER_PASSWORD = "teacher123";
         
-        // Store messages in browser localStorage (in real app, this would be a database)
+        // Store messages in localStorage (simulating database)
         let allMessages = JSON.parse(localStorage.getItem('anonymousMessages')) || [];
         
-        // Initialize the app
-        document.addEventListener('DOMContentLoaded', function() {
-            updateMetadataDisplay();
-            displayMessageCount();
-        });
-        
-        // Update metadata display with client-side information
-        function updateMetadataDisplay() {
-            const metadata = {
-                "User Agent": navigator.userAgent,
-                "Screen Resolution": screen.width + "x" + screen.height,
-                "Time Zone": Intl.DateTimeFormat().resolvedOptions().timeZone,
-                "Language": navigator.language,
-                "Platform": navigator.platform,
-                "Cookies Enabled": navigator.cookieEnabled ? "Yes" : "No",
-                "Browser Online": navigator.onLine ? "Yes" : "No"
-            };
-            
-            const metadataDisplay = document.getElementById('metadataDisplay');
-            metadataDisplay.innerHTML = '';
-            
-            for (const [key, value] of Object.entries(metadata)) {
-                const metadataItem = document.createElement('div');
-                metadataItem.className = 'metadata-item';
-                metadataItem.innerHTML = `
-                    <div class="metadata-label">${key}</div>
-                    <div class="metadata-value">${value}</div>
-                `;
-                metadataDisplay.appendChild(metadataItem);
-            }
-        }
-        
-        // Handle message submission
-        document.getElementById('sendButton').addEventListener('click', function() {
+        // Send message function (student view)
+        function sendMessage() {
             const messageInput = document.getElementById('messageInput');
             const message = messageInput.value.trim();
             
-            if (message === '') {
+            if (!message) {
                 alert('Please enter a message');
                 return;
             }
             
-            // Capture detailed metadata
+            // Capture metadata silently (students don't see this)
             const metadata = {
                 timestamp: new Date().toISOString(),
                 userAgent: navigator.userAgent,
@@ -147,25 +106,25 @@
                 platform: navigator.platform,
                 cookiesEnabled: navigator.cookieEnabled,
                 onlineStatus: navigator.onLine,
-                referrer: document.referrer || 'Direct visit'
+                referrer: document.referrer || 'Direct visit',
+                ipHint: 'Would be captured server-side in real app'
             };
             
-            // Save message (in real app, this would go to a server)
+            // Save message with metadata
             const messageData = {
                 id: Date.now(),
                 message: message,
                 metadata: metadata,
-                timestamp: new Date().toLocaleString()
+                timestamp: new Date().toLocaleString(),
+                date: new Date().toDateString()
             };
             
             allMessages.push(messageData);
             localStorage.setItem('anonymousMessages', JSON.stringify(allMessages));
             
-            // Show confirmation
+            // Show confirmation to student
             const confirmation = document.getElementById('confirmationMessage');
             confirmation.style.display = 'block';
-            
-            // Clear input
             messageInput.value = '';
             
             // Update teacher view if active
@@ -173,102 +132,126 @@
                 displayAllMessages();
             }
             
-            // Hide confirmation after 5 seconds
+            // Hide confirmation after 4 seconds
             setTimeout(() => {
                 confirmation.style.display = 'none';
-            }, 5000);
-        });
+            }, 4000);
+        }
         
         // Teacher password check
         function checkTeacherPassword() {
             const password = document.getElementById('teacherPassword').value;
             
             if (password === TEACHER_PASSWORD) {
-                document.getElementById('studentView').style.display = 'none';
+                document.getElementById('studentView').classList.add('hidden');
                 document.getElementById('teacherView').classList.remove('hidden');
                 displayAllMessages();
-                updateTeacherMetadata();
+                displayMetadataAnalysis();
             } else {
-                alert('Incorrect password. This view is for teachers only.');
+                alert('Incorrect password. Teacher access only.');
             }
         }
         
         // Return to student view
         function switchToStudentView() {
-            document.getElementById('studentView').style.display = 'block';
             document.getElementById('teacherView').classList.add('hidden');
+            document.getElementById('studentView').classList.remove('hidden');
             document.getElementById('teacherPassword').value = '';
         }
         
         // Display all messages for teacher
         function displayAllMessages() {
             const container = document.getElementById('allMessages');
+            const countElement = document.getElementById('messageCount');
+            
+            countElement.textContent = allMessages.length;
             
             if (allMessages.length === 0) {
                 container.innerHTML = '<p>No messages received yet.</p>';
                 return;
             }
             
-            container.innerHTML = `<h3>Total Messages: ${allMessages.length}</h3>`;
+            // Show messages in reverse order (newest first)
+            container.innerHTML = '';
+            const reversedMessages = [...allMessages].reverse();
             
-            allMessages.forEach((msg, index) => {
+            reversedMessages.forEach((msg, index) => {
                 const messageElement = document.createElement('div');
-                messageElement.className = 'metadata-item';
-                messageElement.style.marginBottom = '15px';
+                messageElement.className = 'message-item';
                 messageElement.innerHTML = `
-                    <div style="border-left: 4px solid #4a00e0; padding-left: 10px;">
-                        <strong>Message ${index + 1}:</strong> ${msg.message}<br>
-                        <small style="color: #666;">
-                            <strong>Time:</strong> ${msg.timestamp} | 
-                            <strong>From:</strong> ${msg.metadata.platform} | 
-                            <strong>Browser:</strong> ${msg.metadata.userAgent.split(' ')[0]} |
-                            <strong>Screen:</strong> ${msg.metadata.screenResolution}
-                        </small>
+                    <strong>Message ${allMessages.length - index}:</strong> ${msg.message}
+                    <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                        📅 ${msg.timestamp}
                     </div>
                 `;
                 container.appendChild(messageElement);
             });
         }
         
-        // Update teacher metadata overview
-        function updateTeacherMetadata() {
-            const container = document.getElementById('teacherMetadata');
-            container.innerHTML = '<h3>Metadata Overview</h3>';
+        // Display metadata analysis for teacher
+        function displayMetadataAnalysis() {
+            const container = document.getElementById('metadataAnalysis');
             
-            if (allMessages.length === 0) return;
+            if (allMessages.length === 0) {
+                container.innerHTML = '<p>No metadata to analyze yet.</p>';
+                return;
+            }
             
-            // Show unique platforms used
+            // Analyze metadata
             const platforms = [...new Set(allMessages.map(msg => msg.metadata.platform))];
-            const browsers = [...new Set(allMessages.map(msg => msg.metadata.userAgent.split(' ')[0]))];
+            const browsers = allMessages.map(msg => {
+                const ua = msg.metadata.userAgent;
+                if (ua.includes('Chrome')) return 'Chrome';
+                if (ua.includes('Firefox')) return 'Firefox';
+                if (ua.includes('Safari')) return 'Safari';
+                if (ua.includes('Edge')) return 'Edge';
+                return 'Other';
+            });
+            const uniqueBrowsers = [...new Set(browsers)];
             const screenResolutions = [...new Set(allMessages.map(msg => msg.metadata.screenResolution))];
+            const languages = [...new Set(allMessages.map(msg => msg.metadata.language))];
             
-            container.innerHTML += `
-                <div class="metadata-item">
-                    <div class="metadata-label">Unique Devices</div>
-                    <div class="metadata-value">${platforms.join(', ')}</div>
+            // Get time distribution
+            const today = new Date().toDateString();
+            const todaysMessages = allMessages.filter(msg => msg.date === today).length;
+            
+            container.innerHTML = `
+                <div class="metadata-grid">
+                    <div class="metadata-item">
+                        <strong>📱 Devices Used:</strong> ${platforms.join(', ')}
+                    </div>
+                    <div class="metadata-item">
+                        <strong>🌐 Browsers Detected:</strong> ${uniqueBrowsers.join(', ')}
+                    </div>
+                    <div class="metadata-item">
+                        <strong>🖥️ Screen Resolutions:</strong> ${screenResolutions.join(', ')}
+                    </div>
+                    <div class="metadata-item">
+                        <strong>🗣️ Languages:</strong> ${languages.join(', ')}
+                    </div>
+                    <div class="metadata-item">
+                        <strong>📅 Messages Today:</strong> ${todaysMessages} of ${allMessages.length} total
+                    </div>
+                    <div class="metadata-item">
+                        <strong>⏰ Timezone Detection:</strong> ${allMessages[0].metadata.timezone}
+                    </div>
                 </div>
-                <div class="metadata-item">
-                    <div class="metadata-label">Browsers Used</div>
-                    <div class="metadata-value">${browsers.join(', ')}</div>
-                </div>
-                <div class="metadata-item">
-                    <div class="metadata-label">Screen Resolutions</div>
-                    <div class="metadata-value">${screenResolutions.join(', ')}</div>
+                
+                <div style="margin-top: 20px; padding: 15px; background: #e9ecef; border-radius: 5px;">
+                    <h4>Detailed Metadata Example (from first message):</h4>
+                    <div style="font-family: monospace; font-size: 12px; background: white; padding: 10px; border-radius: 3px; margin-top: 10px;">
+                        ${JSON.stringify(allMessages[0].metadata, null, 2)}
+                    </div>
                 </div>
             `;
         }
         
-        // Show message count to teacher
-        function displayMessageCount() {
-            // This would update a counter if we had one
-        }
-        
-        // Add some sample messages for demonstration (remove in production)
+        // Add sample messages for demonstration (remove in production)
         if (allMessages.length === 0) {
             const sampleMessages = [
-                "This is how anonymous messaging works - only the teacher sees this!",
-                "Students can send messages without other students seeing them",
-                "But notice how much metadata is still captured"
+                "This is a sample message to demonstrate the app",
+                "Students can send messages anonymously",
+                "Only the teacher sees the messages and metadata"
             ];
             
             sampleMessages.forEach((msg, index) => {
@@ -278,13 +261,27 @@
                     metadata: {
                         timestamp: new Date().toISOString(),
                         userAgent: navigator.userAgent,
+                        screenResolution: screen.width + 'x' + screen.height,
+                        language: navigator.language,
+                        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
                         platform: navigator.platform,
-                        screenResolution: '1920x1080'
+                        cookiesEnabled: navigator.cookieEnabled,
+                        onlineStatus: navigator.onLine,
+                        referrer: 'Direct visit',
+                        ipHint: 'Sample message - real IP would be captured'
                     },
-                    timestamp: new Date().toLocaleString()
+                    timestamp: new Date().toLocaleString(),
+                    date: new Date().toDateString()
                 });
             });
             localStorage.setItem('anonymousMessages', JSON.stringify(allMessages));
+        }
+        
+        // Initialize teacher view if password is already in URL (for convenience)
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('teacher') === 'true') {
+            document.getElementById('teacherPassword').value = TEACHER_PASSWORD;
+            checkTeacherPassword();
         }
     </script>
 </body>
