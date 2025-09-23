@@ -49,74 +49,75 @@
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyUZt91McVfidfsayECczlFBlGb3CFiyFk3QzZnntk2b-Zly6OwkcNL2rgjzMHL6S8ekw/exec';
         const API_PASSWORD = 'Sense1i23'; // Must match the password in Google Apps Script
         
-        async function sendMessage() {
-            const messageInput = document.getElementById('messageInput');
-            const message = messageInput.value.trim();
-            const sendBtn = document.querySelector('.btn');
-            const loading = document.getElementById('loadingMessage');
-            const confirmation = document.getElementById('confirmationMessage');
-            
-            if (!message) {
-                alert('Please enter a message');
-                return;
-            }
-            
-            // Show loading, hide button
-            sendBtn.style.display = 'none';
-            loading.style.display = 'block';
-            confirmation.style.display = 'none';
-            
-            // Capture metadata
-            const metadata = {
-                timestamp: new Date().toISOString(),
-                message: message,
-                userAgent: navigator.userAgent,
-                screenResolution: screen.width + 'x' + screen.height,
-                language: navigator.language,
-                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                platform: navigator.platform,
-                referrer: document.referrer || 'Direct visit',
-                pageUrl: window.location.href
-            };
-            
-            try {
-                // Send to Google Sheets with password protection
-                const response = await fetch(SCRIPT_URL + '?password=' + encodeURIComponent(API_PASSWORD), {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(metadata)
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    confirmation.innerHTML = '✅ <strong>Message Sent Successfully!</strong><br>Your Sensei has received your anonymous message.';
-                    messageInput.value = '';
-                } else if (result.error === 'Unauthorized') {
-                    throw new Error('Authentication failed. Using offline mode.');
-                } else {
-                    throw new Error(result.error);
-                }
-                
-            } catch (error) {
-                // Fallback to localStorage
-                saveToLocalStorage(metadata);
-                confirmation.innerHTML = '✅ <strong>Message Saved (Offline Mode)</strong><br>Message stored locally. Sensei will see it later.';
-                messageInput.value = '';
-            } finally {
-                // Restore button and show confirmation
-                sendBtn.style.display = 'block';
-                loading.style.display = 'none';
-                confirmation.style.display = 'block';
-                
-                // Hide confirmation after 4 seconds
-                setTimeout(() => {
-                    confirmation.style.display = 'none';
-                }, 4000);
-            }
+       async function sendMessage() {
+    const messageInput = document.getElementById('messageInput');
+    const message = messageInput.value.trim();
+    const sendBtn = document.querySelector('.btn');
+    const loading = document.getElementById('loadingMessage');
+    const confirmation = document.getElementById('confirmationMessage');
+    
+    if (!message) {
+        alert('Please enter a message');
+        return;
+    }
+    
+    // Show loading, hide button
+    sendBtn.style.display = 'none';
+    loading.style.display = 'block';
+    confirmation.style.display = 'none';
+    
+    // Capture metadata - ADD PASSWORD TO BODY
+    const metadata = {
+        timestamp: new Date().toISOString(),
+        message: message,
+        userAgent: navigator.userAgent,
+        screenResolution: screen.width + 'x' + screen.height,
+        language: navigator.language,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        platform: navigator.platform,
+        referrer: document.referrer || 'Direct visit',
+        pageUrl: window.location.href,
+        password: API_PASSWORD  // ← ADD THIS LINE
+    };
+    
+    try {
+        // Send to Google Sheets - REMOVE PASSWORD FROM URL
+        const response = await fetch(SCRIPT_URL, {  // ← REMOVE ?password=... FROM URL
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(metadata)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            confirmation.innerHTML = '✅ <strong>Message Sent Successfully!</strong><br>Your Sensei has received your anonymous message.';
+            messageInput.value = '';
+        } else if (result.error === 'Unauthorized') {
+            throw new Error('Authentication failed. Using offline mode.');
+        } else {
+            throw new Error(result.error);
         }
+        
+    } catch (error) {
+        // Fallback to localStorage
+        saveToLocalStorage(metadata);
+        confirmation.innerHTML = '✅ <strong>Message Saved (Offline Mode)</strong><br>Message stored locally. Sensei will see it later.';
+        messageInput.value = '';
+    } finally {
+        // Restore button and show confirmation
+        sendBtn.style.display = 'block';
+        loading.style.display = 'none';
+        confirmation.style.display = 'block';
+        
+        // Hide confirmation after 4 seconds
+        setTimeout(() => {
+            confirmation.style.display = 'none';
+        }, 4000);
+    }
+}
         
         function saveToLocalStorage(data) {
             let messages = JSON.parse(localStorage.getItem('anonymousMessages')) || [];
@@ -130,6 +131,7 @@
     </script>
 </body>
 </html>
+
 
 
 
