@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Send Anonymous Message to Teacher</title>
+    <title>Send Anonymous Message to Lecturer</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%); min-height: 100vh; padding: 20px; display: flex; align-items: center; justify-content: center; }
@@ -13,9 +13,9 @@
         textarea { width: 100%; height: 120px; padding: 15px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 16px; margin: 15px 0; resize: vertical; }
         .btn { background: linear-gradient(to right, #4a00e0, #8e2de2); color: white; border: none; padding: 12px 30px; border-radius: 50px; font-size: 16px; cursor: pointer; width: 100%; }
         .confirmation { background: #d4edda; color: #155724; padding: 15px; border-radius: 8px; margin: 15px 0; text-align: center; display: none; }
-        .teacher-access { background: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: center; }
+        .Lecturer-access { background: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: center; }
         .hidden { display: none; }
-        .teacher-view { background: #f8f9fa; padding: 20px; border-radius: 10px; margin-top: 20px; }
+        .Lecturer-view { background: #f8f9fa; padding: 20px; border-radius: 10px; margin-top: 20px; }
         .message-item { background: white; padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 4px solid #4a00e0; }
         .metadata-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 15px; }
         .metadata-item { background: white; padding: 10px; border-radius: 5px; font-size: 14px; }
@@ -31,7 +31,7 @@
             </header>
             
             <div class="content">
-                <p><strong>Instructions:</strong> Type your message below. Only your teacher will see it.</p>
+                <p><strong>Instructions:</strong> Type your message below. Only your Lecturer will see it.</p>
                 
                 <textarea id="messageInput" placeholder="Type your anonymous message here..."></textarea>
                 
@@ -39,21 +39,21 @@
                 
                 <div class="confirmation" id="confirmationMessage">
                     ✅ <strong>Message Sent Successfully!</strong><br>
-                    Your teacher has received your anonymous message.
+                    Your Lecturer has received your anonymous message.
                 </div>
                 
-                <div class="teacher-access">
-                    <p><strong>Teacher Access:</strong></p>
-                    <input type="password" id="teacherPassword" placeholder="Enter teacher password" style="padding: 8px; margin: 5px; border: 1px solid #ddd; border-radius: 5px; width: 200px;">
-                    <button onclick="checkTeacherPassword()" style="padding: 8px 15px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer;">Access Teacher View</button>
+                <div class="Lecturer-access">
+                    <p><strong>Lecturer Access:</strong></p>
+                    <input type="password" id="LecturerPassword" placeholder="Enter Lecturer password" style="padding: 8px; margin: 5px; border: 1px solid #ddd; border-radius: 5px; width: 200px;">
+                    <button onclick="checkLecturerPassword()" style="padding: 8px 15px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer;">Access Lecturer View</button>
                 </div>
             </div>
         </div>
         
-        <!-- Teacher View (Hidden from students) -->
-        <div id="teacherView" class="hidden">
+        <!-- Lecturer View (Hidden from students) -->
+        <div id="LecturerView" class="hidden">
             <header>
-                <h1>Teacher View - Anonymous Messages</h1>
+                <h1>Lecturer View - Anonymous Messages</h1>
                 <p>All messages and captured metadata</p>
             </header>
             
@@ -62,7 +62,7 @@
                     <button onclick="switchToStudentView()" class="btn" style="width: auto; background: #6c757d;">← Back to Student View</button>
                 </div>
                 
-                <div class="teacher-view">
+                <div class="Lecturer-view">
                     <h3>📨 Received Messages: <span id="messageCount">0</span></h3>
                     <div id="allMessages">
                         <p>No messages received yet.</p>
@@ -80,8 +80,8 @@
     </div>
 
     <script>
-        // Teacher password
-        const TEACHER_PASSWORD = "teacher123";
+        // Lecturer password
+        const Lecturer_PASSWORD = "Lecturer123";
         
         // Store messages in localStorage (simulating database)
         let allMessages = JSON.parse(localStorage.getItem('anonymousMessages')) || [];
@@ -127,8 +127,8 @@
             confirmation.style.display = 'block';
             messageInput.value = '';
             
-            // Update teacher view if active
-            if (!document.getElementById('teacherView').classList.contains('hidden')) {
+            // Update Lecturer view if active
+            if (!document.getElementById('LecturerView').classList.contains('hidden')) {
                 displayAllMessages();
             }
             
@@ -138,28 +138,28 @@
             }, 4000);
         }
         
-        // Teacher password check
-        function checkTeacherPassword() {
-            const password = document.getElementById('teacherPassword').value;
+        // Lecturer password check
+        function checkLecturerPassword() {
+            const password = document.getElementById('LecturerPassword').value;
             
-            if (password === TEACHER_PASSWORD) {
+            if (password === Lecturer_PASSWORD) {
                 document.getElementById('studentView').classList.add('hidden');
-                document.getElementById('teacherView').classList.remove('hidden');
+                document.getElementById('LecturerView').classList.remove('hidden');
                 displayAllMessages();
                 displayMetadataAnalysis();
             } else {
-                alert('Incorrect password. Teacher access only.');
+                alert('Incorrect password. Lecturer access only.');
             }
         }
         
         // Return to student view
         function switchToStudentView() {
-            document.getElementById('teacherView').classList.add('hidden');
+            document.getElementById('LecturerView').classList.add('hidden');
             document.getElementById('studentView').classList.remove('hidden');
-            document.getElementById('teacherPassword').value = '';
+            document.getElementById('LecturerPassword').value = '';
         }
         
-        // Display all messages for teacher
+        // Display all messages for Lecturer
         function displayAllMessages() {
             const container = document.getElementById('allMessages');
             const countElement = document.getElementById('messageCount');
@@ -188,7 +188,7 @@
             });
         }
         
-        // Display metadata analysis for teacher
+        // Display metadata analysis for Lecturer
         function displayMetadataAnalysis() {
             const container = document.getElementById('metadataAnalysis');
             
@@ -251,7 +251,7 @@
             const sampleMessages = [
                 "This is a sample message to demonstrate the app",
                 "Students can send messages anonymously",
-                "Only the teacher sees the messages and metadata"
+                "Only the Lecturer sees the messages and metadata"
             ];
             
             sampleMessages.forEach((msg, index) => {
@@ -277,12 +277,13 @@
             localStorage.setItem('anonymousMessages', JSON.stringify(allMessages));
         }
         
-        // Initialize teacher view if password is already in URL (for convenience)
+        // Initialize Lecturer view if password is already in URL (for convenience)
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('teacher') === 'true') {
-            document.getElementById('teacherPassword').value = TEACHER_PASSWORD;
-            checkTeacherPassword();
+        if (urlParams.get('Lecturer') === 'true') {
+            document.getElementById('LecturerPassword').value = Lecturer_PASSWORD;
+            checkLecturerPassword();
         }
     </script>
 </body>
 </html>
+
