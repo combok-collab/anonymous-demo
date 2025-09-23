@@ -12,6 +12,9 @@
         .content { padding: 30px; }
         .refresh-btn { background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 10px 0; }
         .message-item { background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 15px 0; }
+        .server-status { padding: 10px; border-radius: 5px; margin: 10px 0; text-align: center; }
+        .server-online { background: #d4edda; color: #155724; }
+        .server-offline { background: #f8d7da; color: #721c24; }
     </style>
 </head>
 <body>
@@ -23,6 +26,7 @@
         
         <div class="content">
             <button class="refresh-btn" onclick="loadMessages()">🔄 Refresh Messages</button>
+            <div id="serverStatus" class="server-status"></div>
             <div id="lastUpdate" style="color: #666; margin-bottom: 20px;"></div>
             
             <div id="messagesContainer">
@@ -32,62 +36,114 @@
     </div>
 
     <script>
+        // === REPLACE THIS WITH YOUR GOOGLE APPS SCRIPT URL ===
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbysxJIQqr0aksjYJb28cYiOnicJjbqGhkZkbn8SjaBblx4j-dOeeR8Ovh6G7IU0qhMSCw/exec';
+        const API_PASSWORD = 'Sense1i23'; // Must match the password in Google Apps Script
+        
         async function loadMessages() {
             const container = document.getElementById('messagesContainer');
             const lastUpdate = document.getElementById('lastUpdate');
+            const serverStatus = document.getElementById('serverStatus');
             
-            container.innerHTML = '<p>Loading messages...</p>';
+            container.innerHTML = '<p>Loading messages from server...</p>';
+            serverStatus.innerHTML = '';
             
             try {
-                // Try to load from Google Sheets first
-                const sheetMessages = await loadFromGoogleSheets();
-                const localMessages = JSON.parse(localStorage.getItem('anonymousMessages')) || [];
+                // Load from Google Sheets with password protection
+                const response = await fetch(SCRIPT_URL + '?password=' + encodeURIComponent(API_PASSWORD));
+                const result = await response.json();
                 
-                // Combine both sources (remove duplicates)
-                const allMessages = [...sheetMessages, ...localMessages];
-                const uniqueMessages = removeDuplicates(allMessages);
-                
-                if (uniqueMessages.length === 0) {
-                    container.innerHTML = '<p>No messages received yet. Ask students to send messages from the main page.</p>';
-                    return;
+                if (result.success) {
+                    const sheetMessages = result.messages || [];
+                    const localMessages = JSON.parse(localStorage.getItem('anonymousMessages')) || [];
+                    
+                    // Combine both sources (remove duplicates based on timestamp and message)
+                    const allMessages = [...sheetMessages, ...localMessages];
+                    const uniqueMessages = removeDuplicates(allMessages);
+                    
+                    if (uniqueMessages.length === 0) {
+                        container.innerHTML = '<p>No messages received yet. Ask students to send messages from the main page.</p>';
+                        serverStatus.innerHTML = '<span class="server-online">✅ Server Connected - No messages yet</span>';
+                    } else {
+                        displayMessages(uniqueMessages, container);
+                        serverStatus.innerHTML = `<span class="server-online">✅ Server Connected - ${uniqueMessages.length} messages loaded</span>`;
+                    }
+                    
+                    lastUpdate.textContent = `Last updated: ${new Date().toLocaleString()}`;
+                    
+                } else if (result.error === 'Unauthorized') {
+                    throw new Error('Sensei password incorrect or access denied');
+                } else {
+                    throw new Error(result.error);
                 }
                 
-                // Display messages
-                container.innerHTML = `<h3>📨 Total Messages: ${uniqueMessages.length}</h3>`;
-                
-                uniqueMessages.reverse().forEach((msg, index) => {
-                    const messageElement = document.createElement('div');
-                    messageElement.className = 'message-item';
-                    messageElement.innerHTML = `
-                        <strong>Message ${uniqueMessages.length - index}:</strong>
-                        <div style="margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 5px;">
-                            "${msg.message}"
-                        </div>
-                        <div style="font-size: 12px; color: #666;">
-                            <strong>Time:</strong> ${msg.timestamp} | 
-                            <strong>Device:</strong> ${msg.platform} | 
-                            <strong>Browser:</strong> ${detectBrowser(msg.userAgent)} |
-                            <strong>Screen:</strong> ${msg.screenResolution}
-                        </div>
-                        <details style="margin-top: 10px; font-size: 12px;">
-                            <summary>View Full Metadata</summary>
-                            <pre style="background: #2d2d2d; color: white; padding: 10px; border-radius: 5px; overflow-x: auto; margin-top: 5px;">
-${JSON.stringify(msg, null, 2)}
-                            </pre>
-                        </details>
-                    `;
-                    container.appendChild(messageElement);
-                });
-                
-                lastUpdate.textContent = `Last updated: ${new Date().toLocaleString()}`;
-                
             } catch (error) {
-                container.innerHTML = '<p>Error loading messages. Showing local storage only.</p>';
+                console.error('Error loading from server:', error);
+                serverStatus.innerHTML = `<span class="server-offline">⚠️ Server Offline - Showing local messages only: ${error.message}</span>`;
                 loadLocalMessages();
             }
         }
         
+        function displayMessages(messages, container) {
+            // Sort by timestamp (newest first)
+            messages.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            container.innerHTML = `<h3>📨 Total Messages: ${messages.length}</h3>`;
+            
+            messages.forEach((msg, index) => {
+                const messageElement = document.createElement('div');
+                messageElement.className = 'message-item';
+                messageElement.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                        <div style="flex: 1;">
+                            <strong>Message ${index + 1}:</strong>
+                            <span style="color: #666; font-size: 0.9em;">(${formatDate(msg.timestamp)})</span>
+                            <div style="margin: 10px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #4a00e0;">
+                                "${msg.message}"
+                            </div>
+                            <div style="font-size: 0.8em; color: #666;">
+                                <strong>Device:</strong> ${msg.platform || 'Unknown'} | 
+                                <strong>Browser:</strong> ${detectBrowser(msg.useragent || msg.userAgent)} |
+                                <strong>Screen:</strong> ${msg.screenresolution || msg.screenResolution || 'Unknown'} |
+                                <strong>Language:</strong> ${msg.language || 'Unknown'}
+                            </div>
+                        </div>
+                    </div>
+                    <details style="margin-top: 10px;">
+                        <summary style="cursor: pointer; color: #4a00e0; font-size: 0.8em;">View Full Metadata</summary>
+                        <pre style="background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 5px; overflow-x: auto; font-size: 0.7em; margin-top: 10px;">
+${JSON.stringify(msg, null, 2)}
+                        </pre>
+                    </details>
+                `;
+                container.appendChild(messageElement);
+            });
+        }
+        
+        function loadLocalMessages() {
+            const messages = JSON.parse(localStorage.getItem('anonymousMessages')) || [];
+            const container = document.getElementById('messagesContainer');
+            const lastUpdate = document.getElementById('lastUpdate');
+            
+            if (messages.length === 0) {
+                container.innerHTML = '<p>No messages in local storage. Connect to server or have students send messages.</p>';
+                return;
+            }
+            
+            displayMessages(messages, container);
+            lastUpdate.textContent = `Last updated: ${new Date().toLocaleString()} (Local storage only - ${messages.length} messages)`;
+        }
+        
+        function formatDate(timestamp) {
+            try {
+                return new Date(timestamp).toLocaleString();
+            } catch (e) {
+                return timestamp || 'Unknown time';
+            }
+        }
+        
         function detectBrowser(userAgent) {
+            if (!userAgent) return 'Unknown';
             const ua = userAgent.toLowerCase();
             if (ua.includes('chrome')) return 'Chrome';
             if (ua.includes('firefox')) return 'Firefox';
@@ -99,46 +155,15 @@ ${JSON.stringify(msg, null, 2)}
         function removeDuplicates(messages) {
             const seen = new Set();
             return messages.filter(msg => {
-                const identifier = msg.timestamp + msg.message;
+                const identifier = (msg.timestamp + msg.message).toLowerCase();
                 if (seen.has(identifier)) return false;
                 seen.add(identifier);
                 return true;
             });
         }
         
-        function loadLocalMessages() {
-            const messages = JSON.parse(localStorage.getItem('anonymousMessages')) || [];
-            const container = document.getElementById('messagesContainer');
-            const lastUpdate = document.getElementById('lastUpdate');
-            
-            if (messages.length === 0) {
-                container.innerHTML = '<p>No messages in local storage. Messages are stored per browser.</p>';
-                return;
-            }
-            
-            container.innerHTML = `<h3>📨 Local Messages: ${messages.length} (This browser only)</h3>`;
-            
-            messages.reverse().forEach((msg, index) => {
-                const messageElement = document.createElement('div');
-                messageElement.className = 'message-item';
-                messageElement.innerHTML = `
-                    <strong>Message ${messages.length - index}:</strong>
-                    <div style="margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 5px;">
-                        "${msg.message}"
-                    </div>
-                    <div style="font-size: 12px; color: #666;">
-                        <strong>Time:</strong> ${msg.timestamp} | 
-                        <strong>Device:</strong> ${msg.platform}
-                    </div>
-                `;
-                container.appendChild(messageElement);
-            });
-            
-            lastUpdate.textContent = `Last updated: ${new Date().toLocaleString()} (Local storage only)`;
-        }
-        
-        // Auto-refresh every 30 seconds
-        setInterval(loadMessages, 30000);
+        // Auto-refresh every 10 seconds
+        setInterval(loadMessages, 10000);
         
         // Load messages on page load
         loadMessages();
