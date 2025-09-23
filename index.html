@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anonymous Messaging Demo - Educational Tool</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%); color: #333; min-height: 100vh; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; background-color: rgba(255, 255, 255, 0.95); border-radius: 15px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); overflow: hidden; }
+        header { background: linear-gradient(to right, #4a00e0, #8e2de2); color: white; padding: 30px; text-align: center; }
+        h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        .content { padding: 30px; }
+        .panels { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
+        @media (max-width: 768px) { .panels { grid-template-columns: 1fr; } }
+        .panel { background: #f8f9fa; border-radius: 10px; padding: 20px; }
+        textarea { width: 100%; height: 150px; padding: 15px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 1rem; resize: vertical; }
+        .btn { background: linear-gradient(to right, #4a00e0, #8e2de2); color: white; border: none; padding: 12px 25px; border-radius: 50px; font-size: 1rem; cursor: pointer; margin-top: 15px; }
+        .metadata-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+        .metadata-item { background-color: white; padding: 10px 15px; border-radius: 8px; }
+        .message-log { max-height: 400px; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 10px; padding: 15px; background-color: #f8f9fa; }
+        .message-item { background-color: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+        .tab-buttons { display: flex; margin-bottom: 20px; border-bottom: 1px solid #e0e0e0; }
+        .tab-button { padding: 10px 20px; background: none; border: none; cursor: pointer; }
+        .tab-button.active { border-bottom: 3px solid #8e2de2; color: #8e2de2; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Anonymous Message Demo</h1>
+            <p class="subtitle">Send "anonymous" messages while we capture your metadata</p>
+        </header>
+        
+        <div class="content">
+            <div class="tab-buttons">
+                <button class="tab-button active" onclick="switchTab('send')">Send Message</button>
+                <button class="tab-button" onclick="switchTab('view')">View Messages (Teacher)</button>
+            </div>
+            
+            <div id="send-tab" class="tab-content active">
+                <div class="panels">
+                    <div class="panel">
+                        <h2>Send an Anonymous Message</h2>
+                        <textarea id="messageInput" placeholder="Type your anonymous message here..."></textarea>
+                        <button id="sendButton" class="btn">Send Anonymously</button>
+                        
+                        <div class="disclaimer">
+                            <strong>Educational Purpose:</strong> This demonstrates how "anonymous" services collect information.
+                        </div>
+                    </div>
+                    
+                    <div class="panel">
+                        <h2>What We Can Capture</h2>
+                        <div class="metadata-grid" id="metadataDisplay"></div>
+                    </div>
+                </div>
+                
+                <div class="message-log">
+                    <h2>Recent Messages</h2>
+                    <div id="messagesContainer"></div>
+                </div>
+            </div>
+            
+            <div id="view-tab" class="tab-content">
+                <div class="admin-section">
+                    <h2>Teacher View - All Captured Data</h2>
+                    <button id="refreshBtn" class="btn">Refresh Data</button>
+                    <div id="adminMessagesContainer"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(tabName + '-tab').classList.add('active');
+        }
+
+        // Update metadata display
+        function updateMetadataDisplay() {
+            const metadata = {
+                "User Agent": navigator.userAgent,
+                "Screen Resolution": screen.width + "x" + screen.height,
+                "Time Zone": Intl.DateTimeFormat().resolvedOptions().timeZone,
+                "Language": navigator.language,
+                "Platform": navigator.platform,
+                "Cookies Enabled": navigator.cookieEnabled ? "Yes" : "No"
+            };
+            
+            const metadataDisplay = document.getElementById('metadataDisplay');
+            metadataDisplay.innerHTML = '';
+            
+            for (const [key, value] of Object.entries(metadata)) {
+                const metadataItem = document.createElement('div');
+                metadataItem.className = 'metadata-item';
+                metadataItem.innerHTML = `<div class="metadata-label">${key}</div><div class="metadata-value">${value}</div>`;
+                metadataDisplay.appendChild(metadataItem);
+            }
+        }
+
+        // Handle message submission
+        document.getElementById('sendButton').addEventListener('click', async function() {
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value.trim();
+            
+            if (message === '') {
+                alert('Please enter a message');
+                return;
+            }
+            
+            try {
+                this.textContent = 'Sending...';
+                this.disabled = true;
+                
+                // Send to Netlify function
+                const response = await fetch('/.netlify/functions/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: message })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    updateMetadataDisplay();
+                    addMessageToLog(message, result.metadata.timestamp);
+                    messageInput.value = '';
+                    alert('Message sent! Check what information was captured.');
+                }
+            } catch (error) {
+                alert('Error sending message. Please try again.');
+            } finally {
+                this.textContent = 'Send Anonymously';
+                this.disabled = false;
+            }
+        });
+
+        function addMessageToLog(message, timestamp) {
+            const messagesContainer = document.getElementById('messagesContainer');
+            const messageItem = document.createElement('div');
+            messageItem.className = 'message-item';
+            messageItem.innerHTML = `
+                <div class="message-text">${message}</div>
+                <div class="message-meta">Received: ${new Date(timestamp).toLocaleString()}</div>
+            `;
+            messagesContainer.prepend(messageItem);
+        }
+
+        // Initialize
+        updateMetadataDisplay();
+        
+        // Teacher view instructions
+        document.getElementById('adminMessagesContainer').innerHTML = `
+            <p><strong>Instructions:</strong></p>
+            <ol>
+                <li>Have students send messages from different devices</li>
+                <li>Each message captures metadata like IP, browser info, etc.</li>
+                <li>Discuss how "anonymous" services still collect data</li>
+            </ol>
+        `;
+    </script>
+</body>
+</html>
