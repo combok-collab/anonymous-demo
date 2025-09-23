@@ -36,8 +36,8 @@
     </div>
 
     <script>
-        // === REPLACE THIS WITH YOUR GOOGLE APPS SCRIPT URL ===
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzjzVVMO5mJeLM1mJVdv23B-UzLupvtKqngKU4Sw0tVz6nzyG4SetNfLyxIsN9U-2BjhQ/exec';
+        // === UPDATED GOOGLE APPS SCRIPT URL ===
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyUZt91McVfidfsayECczlFBlGb3CFiyFk3QzZnntk2b-Zly6OwkcNL2rgjzMHL6S8ekw/exec';
         const API_PASSWORD = 'Sense1i23'; // Must match the password in Google Apps Script
         
         async function loadMessages() {
@@ -51,6 +51,11 @@
             try {
                 // Load from Google Sheets with password protection
                 const response = await fetch(SCRIPT_URL + '?password=' + encodeURIComponent(API_PASSWORD));
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
                 const result = await response.json();
                 
                 if (result.success) {
@@ -66,7 +71,10 @@
                         serverStatus.innerHTML = '<span class="server-online">✅ Server Connected - No messages yet</span>';
                     } else {
                         displayMessages(uniqueMessages, container);
-                        serverStatus.innerHTML = `<span class="server-online">✅ Server Connected - ${uniqueMessages.length} messages loaded</span>`;
+                        // Show source breakdown
+                        const sheetCount = sheetMessages.length;
+                        const localCount = localMessages.length;
+                        serverStatus.innerHTML = `<span class="server-online">✅ Server Connected - ${uniqueMessages.length} messages (${sheetCount} from sheets, ${localCount} local)</span>`;
                     }
                     
                     lastUpdate.textContent = `Last updated: ${new Date().toLocaleString()}`;
@@ -74,7 +82,7 @@
                 } else if (result.error === 'Unauthorized') {
                     throw new Error('Sensei password incorrect or access denied');
                 } else {
-                    throw new Error(result.error);
+                    throw new Error(result.error || 'Unknown server error');
                 }
                 
             } catch (error) {
@@ -93,11 +101,16 @@
             messages.forEach((msg, index) => {
                 const messageElement = document.createElement('div');
                 messageElement.className = 'message-item';
+                
+                // Check if message is from sheets or local storage
+                const source = msg.id ? '📱 Local Storage' : '☁️ Google Sheets';
+                
                 messageElement.innerHTML = `
                     <div style="display: flex; justify-content: space-between; align-items: start;">
                         <div style="flex: 1;">
                             <strong>Message ${index + 1}:</strong>
                             <span style="color: #666; font-size: 0.9em;">(${formatDate(msg.timestamp)})</span>
+                            <span style="color: #4a00e0; font-size: 0.8em; margin-left: 10px;">${source}</span>
                             <div style="margin: 10px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #4a00e0;">
                                 "${msg.message}"
                             </div>
@@ -170,8 +183,3 @@ ${JSON.stringify(msg, null, 2)}
     </script>
 </body>
 </html>
-
-
-
-
-
