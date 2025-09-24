@@ -48,81 +48,70 @@
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxo3Xt01jaS_igFaGNGL6rCtmximIz2EiamlpV6K3oP9hVM8KWU7NJvEdlebuHmoBPykw/exec';
         const API_PASSWORD = 'Sense1i23';
         
-        async function sendMessage() {
-            const messageInput = document.getElementById('messageInput');
-            const message = messageInput.value.trim();
-            const sendBtn = document.querySelector('.btn');
-            const loading = document.getElementById('loadingMessage');
-            const confirmation = document.getElementById('confirmationMessage');
-            
-            if (!message) {
-                alert('Please enter a message');
-                return;
-            }
-            
-            sendBtn.style.display = 'none';
-            loading.style.display = 'block';
-            confirmation.style.display = 'none';
-            
-            const metadata = {
-                timestamp: new Date().toISOString(),
-                message: message,
-                userAgent: navigator.userAgent,
-                screenResolution: screen.width + 'x' + screen.height,
-                language: navigator.language,
-                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                platform: navigator.platform,
-                referrer: document.referrer || 'Direct visit',
-                pageUrl: window.location.href,
-                password: API_PASSWORD
-            };
-            
-            try {
-                console.log('=== STARTING REQUEST ===');
-                console.log('URL:', SCRIPT_URL);
-                console.log('Metadata:', metadata);
-                
-                const response = await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(metadata)
-                });
-                
-                console.log('Response Status:', response.status);
-                console.log('Response OK:', response.ok);
-                
-                const result = await response.json();
-                console.log('Server Response:', result);
-                
-                if (result.success) {
-                    confirmation.innerHTML = '✅ <strong>Message Sent to Google Sheets!</strong><br>Your Sensei has received your anonymous message.';
-                    messageInput.value = '';
-                } else {
-                    console.error('Server returned error:', result.error);
-                    throw new Error(result.error || 'Server error');
-                }
-                
-            } catch (error) {
-                console.error('=== FETCH FAILED ===');
-                console.error('Error name:', error.name);
-                console.error('Error message:', error.message);
-                console.error('Full error:', error);
-                
-                // Fallback to localStorage
-                saveToLocalStorage(metadata);
-                confirmation.innerHTML = '✅ <strong>Message Saved (Offline Mode)</strong><br>Message stored locally. Sensei will see it later.<br><small>Error: ' + error.message + '</small>';
-                messageInput.value = '';
-            } finally {
-                sendBtn.style.display = 'block';
-                loading.style.display = 'none';
-                confirmation.style.display = 'block';
-                
-                setTimeout(() => {
-                    confirmation.style.display = 'none';
-                }, 4000);
-            }
+       async function sendMessage() {
+  const messageInput = document.getElementById('messageInput');
+  const message = messageInput.value.trim();
+  const sendBtn = document.querySelector('.btn');
+  const loading = document.getElementById('loadingMessage');
+  const confirmation = document.getElementById('confirmationMessage');
+
+  if (!message) {
+    alert('Please enter a message');
+    return;
+  }
+
+  sendBtn.style.display = 'none';
+  loading.style.display = 'block';
+  confirmation.style.display = 'none';
+
+  const formData = new URLSearchParams();
+  formData.append('message', message);
+  formData.append('userAgent', navigator.userAgent);
+  formData.append('screenResolution', screen.width + 'x' + screen.height);
+  formData.append('language', navigator.language);
+  formData.append('timezone', Intl.DateTimeFormat().resolvedOptions().timeZone);
+  formData.append('platform', navigator.platform);
+  formData.append('referrer', document.referrer || 'Direct visit');
+  formData.append('pageUrl', window.location.href);
+  formData.append('password', API_PASSWORD);
+
+  try {
+    const response = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: formData
+    });
+
+    const result = await response.json();
+    if (result.success) {
+      confirmation.innerHTML = '✅ <strong>Message Sent to Google Sheets!</strong><br>Your Sensei has received your anonymous message.';
+      messageInput.value = '';
+    } else {
+      throw new Error(result.error || 'Server error');
+    }
+
+  } catch (error) {
+    console.error('Fetch failed:', error);
+    saveToLocalStorage({
+      timestamp: new Date().toISOString(),
+      message,
+      userAgent: navigator.userAgent,
+      screenResolution: screen.width + 'x' + screen.height,
+      language: navigator.language,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      platform: navigator.platform,
+      referrer: document.referrer || 'Direct visit',
+      pageUrl: window.location.href
+    });
+    confirmation.innerHTML = '✅ <strong>Message Saved (Offline Mode)</strong><br>Message stored locally. Sensei will see it later.<br><small>Error: ' + error.message + '</small>';
+    messageInput.value = '';
+  } finally {
+    sendBtn.style.display = 'block';
+    loading.style.display = 'none';
+    confirmation.style.display = 'block';
+    setTimeout(() => confirmation.style.display = 'none', 4000);
+  }
+}
+
         }
         
         function saveToLocalStorage(data) {
@@ -137,6 +126,7 @@
     </script>
 </body>
 </html>
+
 
 
 
