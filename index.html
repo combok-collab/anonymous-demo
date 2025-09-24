@@ -1,139 +1,122 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Send Anonymous Message to Sensei</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%); min-height: 100vh; padding: 20px; display: flex; align-items: center; justify-content: center; }
-        .container { max-width: 500px; width: 100%; background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); overflow: hidden; }
-        header { background: linear-gradient(to right, #4a00e0, #8e2de2); color: white; padding: 30px; text-align: center; }
-        .content { padding: 30px; }
-        textarea { width: 100%; height: 120px; padding: 15px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 16px; margin: 20px 0; resize: vertical; }
-        .btn { background: linear-gradient(to right, #4a00e0, #8e2de2); color: white; border: none; padding: 15px; border-radius: 50px; font-size: 16px; cursor: pointer; width: 100%; font-weight: 600; }
-        .confirmation { background: #d4edda; color: #155724; padding: 15px; border-radius: 8px; margin: 15px 0; text-align: center; display: none; }
-        .instructions { color: #666; text-align: center; margin-bottom: 20px; }
-        .loading { display: none; text-align: center; color: #666; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Send Anonymous Message to Sensei</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%); min-height: 100vh; padding: 20px; display: flex; align-items: center; justify-content: center; }
+    .container { max-width: 500px; width: 100%; background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); overflow: hidden; }
+    header { background: linear-gradient(to right, #4a00e0, #8e2de2); color: white; padding: 30px; text-align: center; }
+    .content { padding: 30px; }
+    textarea { width: 100%; height: 120px; padding: 15px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 16px; margin: 20px 0; resize: vertical; }
+    .btn { background: linear-gradient(to right, #4a00e0, #8e2de2); color: white; border: none; padding: 15px; border-radius: 50px; font-size: 16px; cursor: pointer; width: 100%; font-weight: 600; }
+    .confirmation { background: #d4edda; color: #155724; padding: 15px; border-radius: 8px; margin: 15px 0; text-align: center; display: none; }
+    .instructions { color: #666; text-align: center; margin-bottom: 20px; }
+    .loading { display: none; text-align: center; color: #666; }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Send Anonymous Message</h1>
-            <p>Your identity remains completely hidden</p>
-        </header>
-        
-        <div class="content">
-            <div class="instructions">
-                <p>Type your message below. Only your Sensei will receive it.</p>
-            </div>
-            
-            <textarea id="messageInput" placeholder="Type your anonymous message here..."></textarea>
-            
-            <button class="btn" onclick="sendMessage()">Send Message Anonymously</button>
-            
-            <div class="loading" id="loadingMessage">
-                ⏳ Sending message...
-            </div>
-            
-            <div class="confirmation" id="confirmationMessage">
-                ✅ <strong>Message Sent Successfully!</strong><br>
-                Your Sensei has received your anonymous message.
-            </div>
-        </div>
+  <div class="container">
+    <header>
+      <h1>Send Anonymous Message</h1>
+      <p>Your identity remains completely hidden</p>
+    </header>
+
+    <div class="content">
+      <div class="instructions">
+        <p>Type your message below. Only your Sensei will receive it.</p>
+      </div>
+
+      <textarea id="messageInput" placeholder="Type your anonymous message here..."></textarea>
+
+      <button class="btn" onclick="sendMessage()">Send Message Anonymously</button>
+
+      <div class="loading" id="loadingMessage">⏳ Sending message...</div>
+      <div class="confirmation" id="confirmationMessage"></div>
     </div>
+  </div>
 
-    <script>
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxo3Xt01jaS_igFaGNGL6rCtmximIz2EiamlpV6K3oP9hVM8KWU7NJvEdlebuHmoBPykw/exec';
-        const API_PASSWORD = 'Sense1i23';
-        
-       async function sendMessage() {
-  const messageInput = document.getElementById('messageInput');
-  const message = messageInput.value.trim();
-  const sendBtn = document.querySelector('.btn');
-  const loading = document.getElementById('loadingMessage');
-  const confirmation = document.getElementById('confirmationMessage');
+  <script>
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz6ZPmZXoaE-IVIN5jH8AJCVlsW4FyS8x6ptGATh7lCS1563EoWah7L2HM5R7tIXWp82Q/exec';
+    const API_PASSWORD = 'Sense1i23';
 
-  if (!message) {
-    alert('Please enter a message');
-    return;
-  }
+    async function sendMessage() {
+      const messageInput = document.getElementById('messageInput');
+      const message = messageInput.value.trim();
+      const sendBtn = document.querySelector('.btn');
+      const loading = document.getElementById('loadingMessage');
+      const confirmation = document.getElementById('confirmationMessage');
 
-  sendBtn.style.display = 'none';
-  loading.style.display = 'block';
-  confirmation.style.display = 'none';
+      if (!message) {
+        alert('Please enter a message');
+        return;
+      }
 
-  const formData = new URLSearchParams();
-  formData.append('message', message);
-  formData.append('userAgent', navigator.userAgent);
-  formData.append('screenResolution', screen.width + 'x' + screen.height);
-  formData.append('language', navigator.language);
-  formData.append('timezone', Intl.DateTimeFormat().resolvedOptions().timeZone);
-  formData.append('platform', navigator.platform);
-  formData.append('referrer', document.referrer || 'Direct visit');
-  formData.append('pageUrl', window.location.href);
-  formData.append('password', API_PASSWORD);
+      sendBtn.style.display = 'none';
+      loading.style.display = 'block';
+      confirmation.style.display = 'none';
 
-  try {
-    const response = await fetch(SCRIPT_URL, {
-      method: 'POST',
-      body: formData
-    });
+      const formData = new URLSearchParams();
+      formData.append('message', message);
+      formData.append('userAgent', navigator.userAgent);
+      formData.append('screenResolution', screen.width + 'x' + screen.height);
+      formData.append('language', navigator.language);
+      formData.append('timezone', Intl.DateTimeFormat().resolvedOptions().timeZone);
+      formData.append('platform', navigator.platform);
+      formData.append('referrer', document.referrer || 'Direct visit');
+      formData.append('pageUrl', window.location.href);
+      formData.append('password', API_PASSWORD);
 
-    const result = await response.json();
-    if (result.success) {
-      confirmation.innerHTML = '✅ <strong>Message Sent to Google Sheets!</strong><br>Your Sensei has received your anonymous message.';
-      messageInput.value = '';
-    } else {
-      throw new Error(result.error || 'Server error');
+      try {
+        const response = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          body: formData
+        });
+
+        const result = await response.json();
+        console.log('Server response:', result);
+
+        if (result.success) {
+          confirmation.innerHTML = '✅ <strong>Message Sent to Google Sheets!</strong><br>Your Sensei has received your anonymous message.';
+          messageInput.value = '';
+        } else {
+          throw new Error(result.error || 'Server error');
+        }
+
+      } catch (error) {
+        console.error('Fetch failed:', error);
+        saveToLocalStorage({
+          timestamp: new Date().toISOString(),
+          message,
+          userAgent: navigator.userAgent,
+          screenResolution: screen.width + 'x' + screen.height,
+          language: navigator.language,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          platform: navigator.platform,
+          referrer: document.referrer || 'Direct visit',
+          pageUrl: window.location.href
+        });
+        confirmation.innerHTML = '✅ <strong>Message Saved (Offline Mode)</strong><br>Message stored locally. Sensei will see it later.<br><small>Error: ' + error.message + '</small>';
+        messageInput.value = '';
+      } finally {
+        sendBtn.style.display = 'block';
+        loading.style.display = 'none';
+        confirmation.style.display = 'block';
+        setTimeout(() => confirmation.style.display = 'none', 4000);
+      }
     }
 
-  } catch (error) {
-    console.error('Fetch failed:', error);
-    saveToLocalStorage({
-      timestamp: new Date().toISOString(),
-      message,
-      userAgent: navigator.userAgent,
-      screenResolution: screen.width + 'x' + screen.height,
-      language: navigator.language,
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      platform: navigator.platform,
-      referrer: document.referrer || 'Direct visit',
-      pageUrl: window.location.href
-    });
-    confirmation.innerHTML = '✅ <strong>Message Saved (Offline Mode)</strong><br>Message stored locally. Sensei will see it later.<br><small>Error: ' + error.message + '</small>';
-    messageInput.value = '';
-  } finally {
-    sendBtn.style.display = 'block';
-    loading.style.display = 'none';
-    confirmation.style.display = 'block';
-    setTimeout(() => confirmation.style.display = 'none', 4000);
-  }
-}
-
-        }
-        
-        function saveToLocalStorage(data) {
-            let messages = JSON.parse(localStorage.getItem('anonymousMessages')) || [];
-            messages.push({
-                id: Date.now() + Math.random(),
-                ...data,
-                timestamp: new Date().toLocaleString()
-            });
-            localStorage.setItem('anonymousMessages', JSON.stringify(messages));
-        }
-    </script>
+    function saveToLocalStorage(data) {
+      let messages = JSON.parse(localStorage.getItem('anonymousMessages')) || [];
+      messages.push({
+        id: Date.now() + Math.random(),
+        ...data,
+        timestamp: new Date().toLocaleString()
+      });
+      localStorage.setItem('anonymousMessages', JSON.stringify(messages));
+    }
+  </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
